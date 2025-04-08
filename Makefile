@@ -9,6 +9,8 @@ TARGET = server
 OBJS = main.o \
        src/util/error.o \
        src/util/vector.o \
+	   src/util/hashmap.o \
+	   src/http_parser.o \
        src/server.o
 
 # Default rule (when you run `make` without arguments)
@@ -19,8 +21,6 @@ $(TARGET): $(OBJS)
 	$(CC) $(CFLAGS) -o $@ $(OBJS)
 
 # Compile main.c -> main.o
-# If main.c depends on server.h, add it after the colon:
-# main.o: main.c src/server.h
 main.o: main.c
 	$(CC) $(CFLAGS) -c main.c -o main.o
 
@@ -30,6 +30,14 @@ src/util/error.o: src/util/error.c src/util/error.h
 
 # Compile vector.c -> vector.o
 src/util/vector.o: src/util/vector.c src/util/vector.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile hashmap.c -> hashmap.o
+src/util/hashmap.o : src/util/hashmap.c src/util/hashmap.h
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Compile http_parser.c -> http_parser.o 
+src/http_parser.o : src/http_parser.c src/http_parser.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile server.c -> server.o
