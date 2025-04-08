@@ -1,29 +1,37 @@
 #ifndef SERVER_H
 #define SERVER_H
 
-#include <sys/socket.h>
-#include "util/vector.h"
-#include "util/error.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
 #include <arpa/inet.h>
 
-// temporarily has 1 two-way reliable connection, but more will come later
-// * use multi-threading for multiple connections ! 
+#define SERVER_PORT_NUMBER 8080
+#define SERVER_IP "127.0.0.1"
+#define MAX_BACKLOG 15 
+
+/*
+Represents a HTTP server. 
+*/
 typedef struct {
-    int sockfd;
-    const char * connection_string_address; 
-    struct sockaddr_in connection_addr; 
+    int socketfd; 
+    struct sockaddr_in server_address;
 } server; 
 
-/* Initializes a [server] struct, setting its [sock] and [connections] 
-    Returns -1 if failure, otherwise it returns the socket number. 
+/* 
+Creates a socket fd and sets [socketfd] with that value. 
+Defines the server address and port, setting [server_address].
+Binds the socket to the address and port. 
 */
-server create_server();
+void create_server(server* s); 
 
-/* Writes the message to the connection. If the bytes written are 0, throws an error. */
-ssize_t write_to_connection(server * s, const char* message); 
+/* 
+Main control loop that will listen for connections, accept the connections, and then 
+handle the requests. 
+*/
+void run_server(server* s); 
 
 #endif 

@@ -40,5 +40,11 @@ src/server.o: src/server.c src/server.h
 clean:
 	rm -f $(OBJS) $(TARGET)
 
+client_test: 
+	$(CC) $(CFLAGS) test/testclient.c -o test_client
+
+clean_test:
+	rm -f test_client
+
 # Explicitly define phony targets (not associated with files)
 .PHONY: all clean

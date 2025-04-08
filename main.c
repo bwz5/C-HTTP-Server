@@ -1,12 +1,11 @@
-#include "src/server.h" 
+#include "src/server.h"
 
 int main(){
-    server serve = create_server(); 
 
-    while (1){
-        write_to_connection(&serve, "Hello there\n"); 
-        sleep(2); 
-    }
+    server Server; 
 
+    create_server(&Server);
+    run_server(&Server); 
+    
     return 0; 
 }
