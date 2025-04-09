@@ -20,6 +20,14 @@
 
 # Build instructions: 
 `make server`
+`./server` to run. 
 
 # Cleanup instructions: 
 `make clean`
+
+# Testing instructions:
+`make client_test`
+`./test_client`
+
+To remove tests: 
+`make clean_test`
