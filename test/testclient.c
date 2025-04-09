@@ -41,7 +41,8 @@ int main() {
     printf("Connected to server!\n");
 
     // Send a message to the server
-    char *message = "Hello, server!";
+    char *message = "GET /hello.htm HTTP/1.1\nUser-Agent: Mozilla/4.0 (compatible; MSIE5.01; Windows NT)\nHost: www.tutorialspoint.com\nAccept-Language: en-us\nAccept-Encoding: gzip, deflate\nConnection: Keep-Alive";
+
     if (send(sockfd, message, strlen(message), 0) < 0) {
         perror("Send failed");
         exit(EXIT_FAILURE);
@@ -56,6 +57,7 @@ int main() {
     }
     buffer[n] = '\0';
     printf("Received: %s\n", buffer);
+    fflush(stdout);
 
     // Close the socket
     close(sockfd);

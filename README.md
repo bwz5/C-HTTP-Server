@@ -10,9 +10,9 @@
         6. Process the client's request 
 
     HTTP Server Portion: 
-        1. Parse the HTTP request (Using external library)
-        2. Process the Request 
-        3. Send back an HTTP Object 
+        1. Parse the HTTP request (Using external library) (Done)
+        2. Process the Request (Done)
+        3. Send back an HTTP Object (Need to decide what I want to send)
 
     Database Portion: 
         1. Create some database 
