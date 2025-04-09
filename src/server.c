@@ -36,12 +36,16 @@ void run_server(server * s){
     socklen_t client_len = sizeof(client_addr); 
 
     while (1) {
+        // TODO: Change this to fork() when we have a new client acceptance
+        // this will maximize efficiency of our program 
         clientfd = accept(s->socketfd, (struct sockaddr *)&s->server_address, (socklen_t *)&client_len);
 
         if (clientfd < 0){
             printf("Failed to connect to the client\n"); 
             exit(-1); 
         }
+
+        // TODO: fork() here 
 
         // handle the incoming request 
         char buffer[1024] = {0}; 

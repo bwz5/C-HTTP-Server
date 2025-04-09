@@ -10,8 +10,8 @@ OBJS = main.o \
        src/util/error.o \
        src/util/vector.o \
 	   src/util/hashmap.o \
-	   src/http_parser.o \
-       src/server.o
+       src/server.o \
+	   src/lib/http-parser/http_parser.o
 
 # Default rule (when you run `make` without arguments)
 all: $(TARGET)
@@ -36,8 +36,8 @@ src/util/vector.o: src/util/vector.c src/util/vector.h
 src/util/hashmap.o : src/util/hashmap.c src/util/hashmap.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Compile http_parser.c -> http_parser.o 
-src/http_parser.o : src/http_parser.c src/http_parser.h
+# Compile http_parser.c -> http_parser.o
+src/lib/http-parser/http_parser.o: src/lib/http-parser/http_parser.c src/lib/http-parser/http_parser.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile server.c -> server.o

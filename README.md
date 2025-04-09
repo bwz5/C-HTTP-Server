@@ -10,8 +10,7 @@
         6. Process the client's request 
 
     HTTP Server Portion: 
-        1. Parse the HTTP request 
-            a. In the beginning, start with printing out the curl message 
+        1. Parse the HTTP request (Using external library)
         2. Process the Request 
         3. Send back an HTTP Object 
 
