@@ -47,9 +47,12 @@ void create_head(HEAD * s){
     pthread_mutex_init(&(s->connections_mutex), NULL); 
 
     s->server_connections = (SERVER_CONNECTION *)malloc(sizeof(SERVER_CONNECTION) * MAX_SERVER_CONNECTIONS);
-    s->server_connections_len = MAX_SERVER_CONNECTIONS; 
+    s->current_weights = (int *)malloc(sizeof(int) * MAX_SERVER_CONNECTIONS);
 
     s->num_connections = 0;
+
+    // set the static weight sum to 0
+    s->static_weight_sum = 0 ;
 }
 
 void add_server_connection(HEAD * s, const char * IP, int port){
@@ -72,6 +75,8 @@ void add_server_connection(HEAD * s, const char * IP, int port){
 
     s->server_connections[s->num_connections] = *sc; 
     s->num_connections += 1; 
+
+    s->static_weight_sum += MEDIUM_WEIGHT; // TODO: Change this as well 
     pthread_mutex_unlock(&s->connections_mutex);
 }
 
@@ -120,24 +125,28 @@ void run_head(HEAD * s){
 
         printf("\nReceived from CLIENT: \n%s\n\n", buffer); 
 
+        // SMOOTH WEIGHT ROUND ROBIN ALGORITHM
         int current_max_weight = 0;
-        SERVER_CONNECTION * chosen_server; 
+        int chosen_idx = 0; 
 
-        // TODO: Change this to include the smooth weight algorithm 
         pthread_mutex_lock(&s->connections_mutex);
         for (unsigned int i = 0; i < s->num_connections; i+= 1){
-            if (current_max_weight < s->server_connections[i].weight){
+            s->current_weights[i] = s->current_weights[i] + s->server_connections[i].weight; 
+
+            if (current_max_weight < s->current_weights[i]){
                 current_max_weight = s->server_connections[i].weight; 
-                chosen_server = &s->server_connections[i];
+                chosen_idx = i;
             }
         }
+        // subtract total weights from our chosen index as last step of algorithm 
+        s->current_weights[chosen_idx] -= s->static_weight_sum;
         pthread_mutex_unlock(&s->connections_mutex);
 
         // Send the request to the best available server 
-        send(chosen_server->serverfd, buffer, bytes_read, 0);
+        send(s->server_connections[chosen_idx].serverfd, buffer, bytes_read, 0);
 
         // accept a response from the server (will wait for a response)
-        int response_size = recv(chosen_server->serverfd, buffer, sizeof(buffer), 0);
+        int response_size = recv(s->server_connections[chosen_idx].serverfd, buffer, sizeof(buffer), 0);
 
         // send the response to the client 
         send(clientfd, buffer, response_size, 0); 

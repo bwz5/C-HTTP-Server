@@ -48,12 +48,16 @@ typedef struct {
 
     // dynamic list containing the servers we can push load to
     SERVER_CONNECTION * server_connections; 
-    size_t server_connections_len;  
+
+    // ALWAYS the same size and indices filled as [server_connections]
+    int * current_weights; 
 
     pthread_mutex_t connections_mutex; // necessary so that the two threads on main don't race
 
     // the number of connections we currently have 
     unsigned int num_connections; 
+
+    int static_weight_sum;
 } HEAD; 
 
 /* 
