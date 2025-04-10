@@ -21,6 +21,7 @@
 # Build instructions: 
 `make server`
 `./server` to run. 
+This starts a server on your localhost IP on port 8080.
 
 # Cleanup instructions: 
 `make clean`

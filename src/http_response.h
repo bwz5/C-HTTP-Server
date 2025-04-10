@@ -13,9 +13,6 @@ typedef struct {
 
     const char * headers; 
 
-    // Headers 
-    // TODO 
-
     // Body 
     const char * body; 
 } HTTP_RESPONSE; 

@@ -14,7 +14,7 @@
 
 #define SERVER_PORT_NUMBER 8080
 #define SERVER_IP "127.0.0.1"
-#define MAX_BACKLOG 15 
+#define MAX_BACKLOG 100
 
 /*
 Represents a HTTP server. 
@@ -32,8 +32,11 @@ Binds the socket to the address and port.
 void create_server(server* s); 
 
 /* 
-Main control loop that will listen for connections, accept the connections, and then 
-handle the requests. 
+Main control loop that:
+    1. listens for connections
+    2. accepts the connections and spawns a child process
+    3. parses the HTTP request 
+    4. returns a HTTP response 
 */
 void run_server(server* s); 
 
