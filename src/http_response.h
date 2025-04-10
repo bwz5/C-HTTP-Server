@@ -30,4 +30,9 @@ Returns a 404 "Not Found" HTML Response
 */
 void generate_404(HTTP_RESPONSE * hr); 
 
+/*
+Brings you to the HOME page
+*/
+void generate_home(HTTP_RESPONSE * hr); 
+
 #endif 

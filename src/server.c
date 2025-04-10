@@ -93,9 +93,19 @@ void run_server(server * s){
         const char * response;
         int response_size; 
 
-        // TEMPORARY 404 Message 
         HTTP_RESPONSE r;
-        generate_404(&r);
+
+        const char * method_name = extract_substring(method,0,method_len);
+        const char * relative_path = extract_substring(path,0,path_len);
+
+        if (!strcmp(method_name, "GET")){
+          if (!strcmp(relative_path, "/home")){
+            // THIS WORKS, just need to create other HTTP response structs 
+            generate_home(&r);
+          } else {
+            generate_404(&r);
+          } 
+        }
         response_size = flatten_response_object(&response, &r);
 
         printf("Response (%d bytes):\n%s", response_size, response);
