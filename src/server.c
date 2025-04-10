@@ -102,6 +102,8 @@ void run_server(server * s){
 
         send(clientfd, response, response_size, 0); 
 
+        free(response); 
+
         close(clientfd); 
 
         exit(-1);
