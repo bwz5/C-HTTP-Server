@@ -67,3 +67,13 @@ void generate_home(HTTP_RESPONSE * hr){
         "</body>\r\n"
         "</html>\r\n";
 }
+
+void generate_response(HTTP_RESPONSE * hr, const char * method_name, const char * relative_path){
+    if (!strcmp(method_name, "GET")){
+          if (!strcmp(relative_path, "/")){
+            generate_home(hr);
+          } else {
+            generate_404(hr);
+          } 
+    }
+}

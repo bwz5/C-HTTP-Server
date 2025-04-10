@@ -23,13 +23,8 @@ Returns a C-string of the HTTP_RESPONSE
 int flatten_response_object(const char ** response, HTTP_RESPONSE * http_response); 
 
 /*
-Returns a 404 "Not Found" HTML Response 
+Generates the HTTP_RESPONSE object 
 */
-void generate_404(HTTP_RESPONSE * hr); 
-
-/*
-Brings you to the HOME ("localhost:8080/") page
-*/
-void generate_home(HTTP_RESPONSE * hr); 
+void generate_response(HTTP_RESPONSE * hr,const char * method_name, const char * relative_path );
 
 #endif 

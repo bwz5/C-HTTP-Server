@@ -95,27 +95,24 @@ void run_server(server * s){
 
         HTTP_RESPONSE r;
 
+        // Extract the method name and URL path from the parser's output 
         const char * method_name = extract_substring(method,0,method_len);
         const char * relative_path = extract_substring(path,0,path_len);
 
-        if (!strcmp(method_name, "GET")){
-          if (!strcmp(relative_path, "/")){
-            // THIS WORKS, just need to create other HTTP response structs 
-            generate_home(&r);
-          } else {
-            generate_404(&r);
-          } 
-        }
+        // Generate the HTTP_RESPONSE object based on the above parameters 
+        generate_response(&r, method_name, relative_path); 
+
+        // Flatten the response object into a string 
         response_size = flatten_response_object(&response, &r);
 
         printf("\n\nSending Response (%d bytes):\n%s", response_size, response);
 
+        // send the response to the client 
         send(clientfd, response, response_size, 0); 
 
+        // cleanup 
         free(response); 
-
         close(clientfd); 
-
         exit(-1);
     }
 }
