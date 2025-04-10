@@ -1,32 +1,14 @@
-## HTTP Server written only in C 
+# HTTP Server written only in C 
 
-# TODO: 
-    TCP/IP CONNECTION: (Done) 
-        1. Create socket 
-        2. Specify socket address, port, protocol type 
-        3. Bind socket fd to step 2's struct 
-        4. Listen for a client connection 
-        5. Connect to client 
-        6. Process the client's request 
-
-    HTTP Server Portion: 
-        1. Parse the HTTP request (Using external library) (Done)
-        2. Process the Request (Done)
-        3. Send back an HTTP Object (Need to decide what I want to send)
-
-    Database Portion: 
-        1. Create some database 
-        2. On HTTP Requests, query the database accordingly 
-
-# Build instructions: 
+## Build instructions: 
 `make server`
 `./server` to run. 
 This starts a server on your localhost IP on port 8080.
 
-# Cleanup instructions: 
+## Cleanup instructions: 
 `make clean`
 
-# Testing instructions:
+## Testing instructions:
 `make client_test`
 `./test_client`
 
