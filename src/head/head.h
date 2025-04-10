@@ -1,8 +1,3 @@
-// Need a way of storing the server's IPs and weights + current weights 
-// Route based on smooth weighted round robin load balancing algorithm 
-
-// create a connection between the head and the server
-    // need a way of differentiation the new server connections from other new connections 
 #ifndef HEAD_H
 #define HEAD_H
 
@@ -10,50 +5,87 @@
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
+#include <pthread.h>
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
 
-typedef struct {
-    const char * IP; 
-    int clientfd; 
-    struct sockaddr_in client_addr; 
+#define SERVER_PORT_NUMBER 8080
+#define SERVER_IP "127.0.0.1"
+#define MAX_BACKLOG 100
 
-    int weight;
-    int current_weight; 
-} server_connection; 
+#define MAX_SERVER_CONNECTIONS 10
+
+#define BEST_WEIGHT 5
+#define MEDIUM_WEIGHT 3
+#define LOW_WEIGHT 1
 
 /*
-Create the server object 
+A socket representing a server connection that HTTP requests will be routed to.
 */
-void create_server(server_connection * sc); 
-
 typedef struct {
     const char * IP; 
+    int serverfd; 
+    struct sockaddr_in server_addr; 
+    int port; 
+    socklen_t server_len; 
+
+    int weight; 
+} SERVER_CONNECTION; 
+
+/*
+Creates a SERVER_CONNECTION object that the HEAD will send load towards. 
+*/
+void create_server(SERVER_CONNECTION * sc, const char * ip, int port); 
+
+/*
+Represents a HTTP server Load Balancer. 
+*/
+typedef struct {
     int socketfd; 
-    struct sockaddr_in sock_addr; 
-} client_connection;
+    struct sockaddr_in server_address;
 
-void create_client(client_connection * cc);
+    // dynamic list containing the servers we can push load to
+    SERVER_CONNECTION * server_connections; 
+    size_t server_connections_len;  
 
-typedef struct {
-    int response_length; 
-    const char * response; 
-} response; 
+    pthread_mutex_t connections_mutex; // necessary so that the two threads on main don't race
 
-typedef struct {
-    // TODO: Need dynamic array of the child servers 
-    server_connection * server_pool; 
-} head; 
-
-void create_head(head * h); 
+    // the number of connections we currently have 
+    unsigned int num_connections; 
+} HEAD; 
 
 /* 
-When receiving a non-server connection: Distribute the workload to a server. 
-When receiving a server connection: Add to the pool of available servers. 
+Creates a socket fd and sets [socketfd] with that value. 
+Defines the server address and port, setting [server_address].
+Binds the socket to the address and port. 
+Dynamically allocates the [server_connections].
+Initializes the [connections_mutex] object.
 */
-void run_head(head * h);
+void create_head(HEAD* s); 
 
-response * distribute(head * h);
- 
+/*
+Tries to connect() to the servers in the network. 
+*/
+void add_server_connection(HEAD * s, const char * IP, int port); 
+
+/* 
+Main control loop that:
+    1. listens for connections
+    2. accepts the connections and spawns a child process
+    3. parses the HTTP request 
+    4. returns a HTTP response 
+*/
+void run_head(HEAD* s); 
+
+/*
+Prints all of the currently existing server connections 
+*/
+void print_server_connections(HEAD * s);
+
+/*
+Frees the objets in the [server_connections]
+*/
+void cleanup(HEAD * s);
+
 #endif 
