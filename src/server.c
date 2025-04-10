@@ -1,47 +1,5 @@
 #include "server.h"
 
-int on_message_begin(http_parser* _) {
-  (void)_;
-  printf("\n***MESSAGE BEGIN***\n\n");
-  return 0;
-}
-
-int on_headers_complete(http_parser* _) {
-  (void)_;
-  printf("\n***HEADERS COMPLETE***\n\n");
-  return 0;
-}
-
-int on_message_complete(http_parser* _) {
-  (void)_;
-  printf("\n***MESSAGE COMPLETE***\n\n");
-  return 0;
-}
-
-int on_url(http_parser* _, const char* at, size_t length) {
-  (void)_;
-  printf("Url: %.*s\n", (int)length, at);
-  return 0;
-}
-
-int on_header_field(http_parser* _, const char* at, size_t length) {
-  (void)_;
-  printf("Header field: %.*s\n", (int)length, at);
-  return 0;
-}
-
-int on_header_value(http_parser* _, const char* at, size_t length) {
-  (void)_;
-  printf("Header value: %.*s\n", (int)length, at);
-  return 0;
-}
-
-int on_body(http_parser* _, const char* at, size_t length) {
-  (void)_;
-  printf("Body: %.*s\n", (int)length, at);
-  return 0;
-}
-
 void create_server(server * s){
     s->socketfd = socket(AF_INET, SOCK_STREAM, 0); 
 
@@ -64,6 +22,14 @@ void create_server(server * s){
         printf("Failure to bind the socketfd with the sockaddr_in struct\n"); 
         exit(-1); 
     }
+}
+
+const char * extract_substring(const char * buf, int start, int length){
+  char * temp = (char *)malloc(length);
+  for (int i = start; i < start + length; i++){
+    temp[i] = buf[i]; 
+  }
+  return temp;
 }
 
 void run_server(server * s){
@@ -101,34 +67,40 @@ void run_server(server * s){
             exit(-1);
         }
 
-        // HTTP MESSAGE PROCESSING 
+        // HTTP MESSAGE PARSING
+        const char *method, *path;
+        int pret, minor_version;
+        struct phr_header headers[100];
+        size_t prevbuflen = 0, method_len, path_len, num_headers;
+            
+        /* parse the request */
+        num_headers = sizeof(headers) / sizeof(headers[0]);
+        pret = phr_parse_request(buffer, bytes_read, &method, &method_len, &path, &path_len,
+                                &minor_version, headers, &num_headers, prevbuflen);
 
-        http_parser_settings settings;
-        memset(&settings, 0, sizeof(settings));
-        settings.on_message_begin = on_message_begin;
-        settings.on_url = on_url;
-        settings.on_header_field = on_header_field;
-        settings.on_header_value = on_header_value;
-        settings.on_headers_complete = on_headers_complete;
-        settings.on_body = on_body;
-        settings.on_message_complete = on_message_complete;
-
-        // initialize http_parser 
-        http_parser *parser = malloc(sizeof(http_parser));
-        http_parser_init(parser, HTTP_REQUEST);
-
-        // parse the message 
-        size_t nparsed = http_parser_execute(parser, &settings, buffer, bytes_read);
-        
-        if (nparsed != bytes_read) {
-            printf("Error: Could not parse the entire incoming HTTP request\n");
+        // PRINT THE HTTP MESSAGE 
+        printf("request is %d bytes long\n", pret);
+        printf("method is %.*s\n", (int)method_len, method);
+        printf("path is %.*s\n", (int)path_len, path);
+        printf("HTTP version is 1.%d\n", minor_version);
+        printf("headers:\n");
+        for (size_t i = 0; i != num_headers; ++i) {
+            printf("%.*s: %.*s\n", (int)headers[i].name_len, headers[i].name,
+                  (int)headers[i].value_len, headers[i].value);
         }
 
-        free(parser); // free the memory associated with parser 
-
         // respond to the message 
-        const char * response = "Received your message\n"; 
-        send(clientfd, response, sizeof(response), 0); 
+        const char * response;
+        int response_size; 
+
+        // TEMPORARY 404 Message 
+        HTTP_RESPONSE r;
+        generate_404(&r);
+        response_size = flatten_response_object(&response, &r);
+
+        printf("Response (%d bytes):\n%s", response_size, response);
+
+        send(clientfd, response, response_size, 0); 
 
         close(clientfd); 
 

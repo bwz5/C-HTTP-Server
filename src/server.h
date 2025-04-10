@@ -8,7 +8,9 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
-#include "lib/http-parser/http_parser.h"
+#include "lib/picohttpparser/picohttpparser.h"
+#include "util/hashset.h"
+#include "http_response.h"
 
 #define SERVER_PORT_NUMBER 8080
 #define SERVER_IP "127.0.0.1"

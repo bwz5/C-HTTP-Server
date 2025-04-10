@@ -49,6 +49,7 @@ int main() {
     }
     printf("Sent: %s\n", message);
 
+    sleep(2);
     // Receive a response from the server
     memset(buffer, 0, BUFFER_SIZE);
     if ((n = recv(sockfd, buffer, BUFFER_SIZE - 1, 0)) < 0) {
