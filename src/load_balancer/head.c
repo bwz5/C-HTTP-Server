@@ -126,7 +126,7 @@ void run_head(HEAD * s){
         printf("\nReceived from CLIENT: \n%s\n\n", buffer); 
 
         // SMOOTH WEIGHT ROUND ROBIN ALGORITHM
-        int current_max_weight = 0;
+        int current_max_weight = -214748364; // very small integer 
         int chosen_idx = 0; 
 
         pthread_mutex_lock(&s->connections_mutex);
