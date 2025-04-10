@@ -35,8 +35,9 @@ typedef struct {
 
 /*
 Creates a SERVER_CONNECTION object that the HEAD will send load towards. 
+Returns -1 if not possible, i.e. IP is incorrect, 0 otherwise.
 */
-void create_server(SERVER_CONNECTION * sc, const char * ip, int port); 
+int create_server(SERVER_CONNECTION * sc, const char * ip, int port); 
 
 /*
 Represents a HTTP server Load Balancer. 

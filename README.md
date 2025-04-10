@@ -17,7 +17,6 @@ To remove tests:
 
 ## Further work: 
 * Add support for other HTTP Request Methods other than GET 
-* Implement some form of load balancing 
 
 ## TODO:
 * Smooth Weighted round robin load balancing

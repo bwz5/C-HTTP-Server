@@ -17,8 +17,8 @@ SERVER_OBJS = src/server/main.o \
 	   src/lib/picohttpparser/http_parser.o \
 	   src/server/http_response.o
 
-HEAD_OBJS = src/head/main_head.o \
-			src/head/head.o
+HEAD_OBJS = src/load_balancer/main_head.o \
+			src/load_balancer/head.o
 
 # Link all object files into the final executable
 $(SERVER_TARGET): $(SERVER_OBJS)
@@ -57,11 +57,11 @@ $(HEAD_TARGET): $(HEAD_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(HEAD_OBJS)
 
 # Compile head.c -> head.o
-src/head/head.o: src/head/head.c src/head/head.h
+src/load_balancer/head.o: src/load_balancer/head.c src/load_balancer/head.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile main.c -> main_head.o
-src/head/main_head.o: src/head/main.c
+src/load_balancer/main_head.o: src/load_balancer/main.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Clean up build artifacts

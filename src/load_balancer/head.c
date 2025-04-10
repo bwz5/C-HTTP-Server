@@ -1,12 +1,26 @@
 #include "head.h"
 
-void create_server(SERVER_CONNECTION * sc, const char * ip, int port){
+int create_server(SERVER_CONNECTION * sc, const char * ip, int port){
     sc->IP = strdup(ip);
     sc->port = port;
-    // TODO: create the sockets, connect, etc.
+    
+    sc->serverfd = socket(AF_INET, SOCK_STREAM, 0);
+
+    sc->server_addr.sin_family = AF_INET; 
+    sc->server_addr.sin_port = htons(port); 
+
+    if (inet_pton(AF_INET, ip, &sc->server_addr.sin_addr) <= 0) {
+        printf("Invalid address/Address not supported\n");
+        return -1; 
+    }
+
+    if (connect(sc->serverfd, (struct sockaddr *)&sc->server_addr, sizeof(sc->server_addr)) < 0){
+        printf("Connection failed\n");
+        return -1; 
+    }
 
     sc->weight = MEDIUM_WEIGHT; // TODO: Change weight later based on real info (CPU probably best)
-    
+    return 0;
 }
 
 void create_head(HEAD * s){
@@ -21,7 +35,7 @@ void create_head(HEAD * s){
     // Convert to text string 
     inet_ntop(AF_INET, &(s->server_address.sin_addr), ip_str, INET_ADDRSTRLEN);
 
-    printf("Server Head started on address %s and port %i\n", ip_str, SERVER_PORT_NUMBER);
+    printf("LoadBalancer Head started on %s:%i\n", ip_str, SERVER_PORT_NUMBER);
 
     if (bind(s->socketfd, (struct sockaddr *)&s->server_address, sizeof(s->server_address)) < 0){
         printf("Failure to bind the socketfd with the sockaddr_in struct\n"); 
@@ -39,11 +53,13 @@ void create_head(HEAD * s){
 }
 
 void add_server_connection(HEAD * s, const char * IP, int port){
-    printf("Adding a connection to %s:%d!\n", IP, port);
-
     // create the server object 
     SERVER_CONNECTION * sc = (SERVER_CONNECTION*)malloc(sizeof(SERVER_CONNECTION));
-    create_server(sc, IP, port); 
+    int success = create_server(sc, IP, port); 
+
+    if (success < 0){
+        return; // could not create the server 
+    }
 
     // add to the array
     pthread_mutex_lock(&s->connections_mutex);
@@ -105,6 +121,10 @@ void run_head(HEAD * s){
         printf("Received: %s\n\n", buffer); 
 
         // TODO: Send the HTTP parsing to other servers 
+        // 1. pick the highest weight server
+        // 2. send the data 
+        // 3. wait for the response 
+        // 4. when given the response back, we pass that into the server 
 
         // respond to the message 
         const char * response = "Response from server";
