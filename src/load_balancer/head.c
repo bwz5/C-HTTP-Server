@@ -77,7 +77,7 @@ void add_server_connection(HEAD * s, const char * IP, int port){
 
 void print_server_connections(HEAD * s){
     pthread_mutex_lock(&s->connections_mutex);
-    for (unsigned int i = 0; i < s->num_connections; i++){
+    for (unsigned int i = 0; i < s->num_connections; i += 1){
         printf("Server connected on %s:%d\n",s->server_connections[i].IP, s->server_connections[i].port);
     }
     pthread_mutex_unlock(&s->connections_mutex);
@@ -112,26 +112,35 @@ void run_head(HEAD * s){
 
         // handle the incoming request 
         char buffer[1024] = {0}; 
-        size_t bytes_read = recv(clientfd, buffer, sizeof(buffer)-1, 0); 
+        size_t bytes_read = recv(clientfd, buffer, sizeof(buffer), 0); 
         if (bytes_read < 0) {
             printf("Error reading the clientfd\n"); 
             exit(-1);
         }
 
-        printf("Received: %s\n\n", buffer); 
+        printf("\nReceived from CLIENT: \n%s\n\n", buffer); 
 
-        // TODO: Send the HTTP parsing to other servers 
-        // 1. pick the highest weight server
-        // 2. send the data 
-        // 3. wait for the response 
-        // 4. when given the response back, we pass that into the server 
+        int current_max_weight = 0;
+        SERVER_CONNECTION * chosen_server; 
 
-        // respond to the message 
-        const char * response = "Response from server";
-        int response_size = strlen(response); 
+        // TODO: Change this to include the smooth weight algorithm 
+        pthread_mutex_lock(&s->connections_mutex);
+        for (unsigned int i = 0; i < s->num_connections; i+= 1){
+            if (current_max_weight < s->server_connections[i].weight){
+                current_max_weight = s->server_connections[i].weight; 
+                chosen_server = &s->server_connections[i];
+            }
+        }
+        pthread_mutex_unlock(&s->connections_mutex);
+
+        // Send the request to the best available server 
+        send(chosen_server->serverfd, buffer, bytes_read, 0);
+
+        // accept a response from the server (will wait for a response)
+        int response_size = recv(chosen_server->serverfd, buffer, sizeof(buffer), 0);
 
         // send the response to the client 
-        send(clientfd, response, response_size, 0); 
+        send(clientfd, buffer, response_size, 0); 
 
         // cleanup 
         close(clientfd); 
@@ -142,7 +151,7 @@ void run_head(HEAD * s){
 void cleanup(HEAD * s){
     // free all of the server connections 
     pthread_mutex_lock(&s->connections_mutex);
-    for (unsigned int i = 0; i < s->num_connections; i++){
+    for (unsigned int i = 0; i < s->num_connections; i+= 1){
         free(&s->server_connections[i]);
     }
     pthread_mutex_unlock(&s->connections_mutex);
