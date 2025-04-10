@@ -80,7 +80,7 @@ void run_server(server * s){
 
         // PRINT THE HTTP MESSAGE 
         printf("request is %d bytes long\n", pret);
-        printf("method is %.*s\n", (int)method_len, method);
+        printf("Received a %.*s Request.\n", (int)method_len, method);
         printf("path is %.*s\n", (int)path_len, path);
         printf("HTTP version is 1.%d\n", minor_version);
         printf("headers:\n");
@@ -99,7 +99,7 @@ void run_server(server * s){
         const char * relative_path = extract_substring(path,0,path_len);
 
         if (!strcmp(method_name, "GET")){
-          if (!strcmp(relative_path, "/home")){
+          if (!strcmp(relative_path, "/")){
             // THIS WORKS, just need to create other HTTP response structs 
             generate_home(&r);
           } else {
@@ -108,7 +108,7 @@ void run_server(server * s){
         }
         response_size = flatten_response_object(&response, &r);
 
-        printf("Response (%d bytes):\n%s", response_size, response);
+        printf("\n\nSending Response (%d bytes):\n%s", response_size, response);
 
         send(clientfd, response, response_size, 0); 
 

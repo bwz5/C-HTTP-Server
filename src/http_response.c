@@ -63,7 +63,7 @@ void generate_home(HTTP_RESPONSE * hr){
         "</head>\r\n"
         "<body>\r\n"
         "<h1>Home Page!</h1>\r\n"
-        "<p>Nicely done.</p>\r\n"
+        "<p>Welcome to the home page of the HTTP Server in C Project.</p>\r\n"
         "</body>\r\n"
         "</html>\r\n";
 }

@@ -28,7 +28,7 @@ Returns a 404 "Not Found" HTML Response
 void generate_404(HTTP_RESPONSE * hr); 
 
 /*
-Brings you to the HOME page
+Brings you to the HOME ("localhost:8080/") page
 */
 void generate_home(HTTP_RESPONSE * hr); 
 
