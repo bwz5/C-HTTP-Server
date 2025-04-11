@@ -1,9 +1,13 @@
 # HTTP Server written only in C 
 
-## Build instructions: 
+## Build instructions for the Load Balancer: 
+`make head`
+`./head` to run. 
+
+## Build instructions for Individual Servers: 
+*Note* You must change the IP address at the top of src/server/sever.c to be the IP of the load balancer. 
 `make server`
 `./server` to run. 
-This starts a server on your localhost IP on port 8080.
 
 ## Cleanup instructions: 
 `make clean`
@@ -11,7 +15,6 @@ This starts a server on your localhost IP on port 8080.
 ## Testing instructions:
 `make client_test`
 `./test_client`
-
 To remove tests: 
 `make clean_test`
 
