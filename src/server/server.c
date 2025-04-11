@@ -10,7 +10,7 @@
 #include "http_response.h"
 
 #define SERVER_PORT_NUMBER 8080
-#define SERVER_IP "128.84.125.231" // load balancer IP 
+#define SERVER_IP "127.0.0.1" // load balancer IP 
 #define MAX_BACKLOG 100
 
 /*
