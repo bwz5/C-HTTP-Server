@@ -80,8 +80,9 @@ Main control loop that:
     2. accepts the connections and spawns a child process
     3. parses the HTTP request 
     4. returns a HTTP response 
+Runs on a separate thread than the main menu option thread. 
 */
-void run_head(HEAD* s); 
+void * run_head(void *arg); 
 
 /*
 Prints all of the currently existing server connections 

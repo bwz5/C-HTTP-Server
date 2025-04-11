@@ -11,6 +11,7 @@
 #define SERVER_PORT_NUMBER 8080
 #define SERVER_IP "127.0.0.1" // load balancer IP MUST CHANGE 
 #define MAX_BACKLOG 100
+#define HTTP_REQUEST_SIZE 4096
 
 /*
 Represents a server that will 
@@ -39,6 +40,11 @@ void run_server(server* s);
 void create_server(server * s){
     s->socketfd = socket(AF_INET, SOCK_STREAM, 0); 
 
+    if (s->socketfd < 0) {
+        printf("Server socket creation failed.\n");
+        exit(EXIT_FAILURE);
+    }
+
     inet_aton(SERVER_IP,(struct in_addr*)&s->server_address.sin_addr); 
     s->server_address.sin_port = htons(SERVER_PORT_NUMBER); 
     s->server_address.sin_family = AF_INET; 
@@ -49,22 +55,25 @@ void create_server(server * s){
     if (inet_ntop(AF_INET, &(s->server_address.sin_addr), ip_str, INET_ADDRSTRLEN) != NULL) {
         printf("IP Address: %s\n", ip_str);
     } else {
-        perror("inet_ntop");
+        printf("Error converting the IP string to an address.\n");
+        exit(EXIT_FAILURE);
     }
 
     printf("Server started on address %s and port %i\n", ip_str, SERVER_PORT_NUMBER);
 
     if (bind(s->socketfd, (struct sockaddr *)&s->server_address, sizeof(s->server_address)) < 0){
         printf("Failure to bind the socketfd with the sockaddr_in struct\n"); 
-        exit(-1); 
+        exit(EXIT_FAILURE); 
     }
 }
 
 const char * extract_substring(const char * buf, int start, int length){
-  char * temp = (char *)malloc(length);
-  for (int i = start; i < start + length; i++){
-    temp[i] = buf[i]; 
+  char * temp = (char *)malloc(length + 1);
+  for (int i = 0; i < length; i++){
+    temp[i] = buf[i + start]; 
   }
+
+  temp[length] = "\0";
   return temp;
 }
 
@@ -81,7 +90,7 @@ void run_server(server * s){
 
     while (1) {
         // load balancer is sending data
-        headfd = accept(s->socketfd, (struct sockaddr *)&s->server_address, (socklen_t *)&head_len);
+        headfd = accept(s->socketfd, (struct sockaddr *)&head_addr, (socklen_t *)&head_len);
 
         if (headfd < 0){
             printf("Failed to connect to the client\n"); 
@@ -93,11 +102,12 @@ void run_server(server * s){
 
         if (PID != 0){
             // parent
+            close(headfd);
             continue; 
         }
 
         // handle the incoming data from the Load Balancer 
-        char buffer[1024] = {0}; 
+        char buffer[HTTP_REQUEST_SIZE] = {0}; 
         size_t bytes_read = recv(headfd, buffer, sizeof(buffer)-1, 0); 
         if (bytes_read < 0) {
             printf("Error reading the clientfd\n"); 
@@ -149,8 +159,11 @@ void run_server(server * s){
 
         // cleanup 
         free((void*)response); 
+        free((void*)method_name); 
+        free((void*)relative_path); 
+
         close(headfd); 
-        exit(-1);
+        exit(0);
     }
 }
 

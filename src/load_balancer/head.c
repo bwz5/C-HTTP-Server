@@ -6,16 +6,26 @@ int create_server(SERVER_CONNECTION * sc, const char * ip, int port){
     
     sc->serverfd = socket(AF_INET, SOCK_STREAM, 0);
 
+    if (sc->serverfd < 0){
+        printf("Error creating the socket for the server connection.\n");
+        free((void*)sc->IP); 
+        return -1; 
+    }
+
     sc->server_addr.sin_family = AF_INET; 
     sc->server_addr.sin_port = htons(port); 
 
     if (inet_pton(AF_INET, ip, &sc->server_addr.sin_addr) <= 0) {
         printf("Invalid address/Address not supported\n");
+        free((void*)sc->IP);
+        close(sc->serverfd); 
         return -1; 
     }
 
     if (connect(sc->serverfd, (struct sockaddr *)&sc->server_addr, sizeof(sc->server_addr)) < 0){
         printf("Connection failed\n");
+        free((void*)sc->IP);
+        close(sc->serverfd);
         return -1; 
     }
 
@@ -49,6 +59,13 @@ void create_head(HEAD * s){
     s->server_connections = (SERVER_CONNECTION *)malloc(sizeof(SERVER_CONNECTION) * MAX_SERVER_CONNECTIONS);
     s->current_weights = (int *)malloc(sizeof(int) * MAX_SERVER_CONNECTIONS);
 
+    if (s->server_connections == NULL || s->current_weights == NULL){
+        printf("Error using malloc, could not create load balancer.\n");
+        exit(-1); 
+    }
+    //memset here to initialize an all zero array, as we assume in the round robin calculation initial values of zero
+    memset(s->current_weights, 0, MAX_SERVER_CONNECTIONS);
+
     s->num_connections = 0;
 
     // set the static weight sum to 0
@@ -61,6 +78,7 @@ void add_server_connection(HEAD * s, const char * IP, int port){
     int success = create_server(sc, IP, port); 
 
     if (success < 0){
+        free(sc); 
         return; // could not create the server 
     }
 
@@ -88,7 +106,8 @@ void print_server_connections(HEAD * s){
     pthread_mutex_unlock(&s->connections_mutex);
 }
 
-void run_head(HEAD * s){
+void * run_head(void * arg){
+    HEAD * s = (HEAD *)arg;
     // listen on the socketfd and set the maximum number of queued connections 
     if (listen(s->socketfd, MAX_BACKLOG ) < 0){
         printf("Failed to listen to the socket\n");
@@ -100,7 +119,7 @@ void run_head(HEAD * s){
     socklen_t client_len = sizeof(client_addr); 
 
     while (1) {
-        clientfd = accept(s->socketfd, (struct sockaddr *)&s->server_address, (socklen_t *)&client_len);
+        clientfd = accept(s->socketfd, (struct sockaddr *)&client_addr, (socklen_t *)&client_len);
 
         if (clientfd < 0){
             printf("Failed to connect to the client\n"); 
@@ -112,6 +131,7 @@ void run_head(HEAD * s){
 
         if (PID != 0){
             // parent
+            close(clientfd); // avoid race conditions on the fd 
             continue; 
         }
 
@@ -120,7 +140,8 @@ void run_head(HEAD * s){
         size_t bytes_read = recv(clientfd, buffer, sizeof(buffer), 0); 
         if (bytes_read < 0) {
             printf("Error reading the clientfd\n"); 
-            exit(-1);
+            close(clientfd); // error on clientside or recv
+            exit(-1); // need to exit because we are in the child 
         }
 
         printf("\nReceived from CLIENT: \n%s\n\n", buffer); 
@@ -134,7 +155,7 @@ void run_head(HEAD * s){
             s->current_weights[i] = s->current_weights[i] + s->server_connections[i].weight; 
 
             if (current_max_weight < s->current_weights[i]){
-                current_max_weight = s->server_connections[i].weight; 
+                current_max_weight = s->current_weights[i];
                 chosen_idx = i;
             }
         }
@@ -143,17 +164,26 @@ void run_head(HEAD * s){
         pthread_mutex_unlock(&s->connections_mutex);
 
         // Send the request to the best available server 
-        send(s->server_connections[chosen_idx].serverfd, buffer, bytes_read, 0);
+        size_t bytes_sent = send(s->server_connections[chosen_idx].serverfd, buffer, bytes_read, 0);
+        if (bytes_sent != bytes_read){
+            printf("Error sending full message to the server.\n");
+            exit(-1);
+        }
 
         // accept a response from the server (will wait for a response)
-        int response_size = recv(s->server_connections[chosen_idx].serverfd, buffer, sizeof(buffer), 0);
+        bytes_read = recv(s->server_connections[chosen_idx].serverfd, buffer, sizeof(buffer), 0);
 
         // send the response to the client 
-        send(clientfd, buffer, response_size, 0); 
+        bytes_sent = send(clientfd, buffer, bytes_read, 0); 
+
+        if (bytes_sent != bytes_read){
+            printf("Error sending full message to the client.\n");
+            exit(-1);
+        }
 
         // cleanup 
         close(clientfd); 
-        exit(-1);
+        exit(0);
     }
 }
 
@@ -161,9 +191,13 @@ void cleanup(HEAD * s){
     // free all of the server connections 
     pthread_mutex_lock(&s->connections_mutex);
     for (unsigned int i = 0; i < s->num_connections; i+= 1){
-        free(&s->server_connections[i]);
+        free((void*)s->server_connections[i].IP);
     }
 
-    free(&s->current_weights);
+    free((void*)s->server_connections);
+
+    free((void*)s->current_weights);
     pthread_mutex_unlock(&s->connections_mutex);
+
+    pthread_mutex_destroy(&s->connections_mutex);
 }

@@ -1,17 +1,23 @@
 #include "head.h"
 #include <pthread.h> 
 
+HEAD head; // representation of a load balancer 
+
 typedef enum {
     ADD_CONNECTION = 1,
     PRINT_CONNECTIONS = 2
 } menu_options;
+
+void cleanup_handler(void) {
+    cleanup(&head); 
+}
 
 void add_connection(HEAD * h){
     printf("Please enter the IP of the server you wish to add to the network in the format of: \nIP_ADDRESS PORT \n");
     char ip_buffer[100]; 
     int port; 
 
-    scanf("%s %d", ip_buffer, &port); 
+    scanf("%99s %d", ip_buffer, &port); // read 99 bytes to avoid buffer overflow
     add_server_connection(h, ip_buffer, port); 
 }
 
@@ -32,6 +38,7 @@ void poll_terminal(HEAD* h){
                 break; 
             case PRINT_CONNECTIONS:
                 print_server_connections(h);
+                break; 
             default:
                 break; 
         }
@@ -39,10 +46,12 @@ void poll_terminal(HEAD* h){
 }
 
 int main(){
-
-    HEAD head; 
-
     create_head(&head);
+
+    if (atexit(cleanup_handler) != 0) {
+        printf("atexit registration failed for the cleanup of our load balancer.\n");
+        exit(EXIT_FAILURE);
+    }
 
     printf("Welcome to the load balancing HTTP server, written entirely in C!\n\n"); 
 
