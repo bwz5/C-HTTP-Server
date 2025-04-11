@@ -89,7 +89,7 @@ Prints all of the currently existing server connections
 void print_server_connections(HEAD * s);
 
 /*
-Frees the objets in the [server_connections]
+Frees the objects in the [server_connections] and the [current_weights]
 */
 void cleanup(HEAD * s);
 

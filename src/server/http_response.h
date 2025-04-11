@@ -3,8 +3,6 @@
 
 #include <stdio.h> 
 
-
-
 typedef struct {
     // Message Status-Line
     const char * version; 

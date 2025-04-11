@@ -163,5 +163,7 @@ void cleanup(HEAD * s){
     for (unsigned int i = 0; i < s->num_connections; i+= 1){
         free(&s->server_connections[i]);
     }
+
+    free(&s->current_weights);
     pthread_mutex_unlock(&s->connections_mutex);
 }

@@ -1,4 +1,41 @@
-#include "server.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
+#include <sys/socket.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include "../lib/picohttpparser/picohttpparser.h"
+#include "../util/hashset.h"
+#include "http_response.h"
+
+#define SERVER_PORT_NUMBER 8080
+#define SERVER_IP "128.84.125.231" // load balancer IP 
+#define MAX_BACKLOG 100
+
+/*
+Represents a server that will 
+*/
+typedef struct {
+    int socketfd; 
+    struct sockaddr_in server_address;
+} server; 
+
+/* 
+Creates a socket fd and sets [socketfd] with that value. 
+Defines the server address and port, setting [server_address].
+Binds the socket to the address and port. 
+*/
+void create_server(server* s); 
+
+/* 
+Main control loop that:
+    1. listens for connection from Load Balancer 
+    2. accepts the connection and spawns a child process
+    3. parses the HTTP request 
+    4. returns a HTTP response to the Load Balancer 
+*/
+void run_server(server* s); 
 
 void create_server(server * s){
     s->socketfd = socket(AF_INET, SOCK_STREAM, 0); 
@@ -9,7 +46,7 @@ void create_server(server * s){
     
     char ip_str[INET_ADDRSTRLEN];
 
-    // Convert to text string (Taken from GEMINI) 
+    // Convert to text string 
     if (inet_ntop(AF_INET, &(s->server_address.sin_addr), ip_str, INET_ADDRSTRLEN) != NULL) {
         printf("IP Address: %s\n", ip_str);
     } else {
@@ -39,14 +76,15 @@ void run_server(server * s){
         exit(-1); 
     }
 
-    int clientfd; 
-    struct sockaddr_in client_addr; 
-    socklen_t client_len = sizeof(client_addr); 
+    int headfd; 
+    struct sockaddr_in head_addr; 
+    socklen_t head_len = sizeof(head_addr); 
 
     while (1) {
-        clientfd = accept(s->socketfd, (struct sockaddr *)&s->server_address, (socklen_t *)&client_len);
+        // load balancer is sending data
+        headfd = accept(s->socketfd, (struct sockaddr *)&s->server_address, (socklen_t *)&head_len);
 
-        if (clientfd < 0){
+        if (headfd < 0){
             printf("Failed to connect to the client\n"); 
             exit(-1); 
         }
@@ -59,9 +97,9 @@ void run_server(server * s){
             continue; 
         }
 
-        // handle the incoming request 
+        // handle the incoming data from the Load Balancer 
         char buffer[1024] = {0}; 
-        size_t bytes_read = recv(clientfd, buffer, sizeof(buffer)-1, 0); 
+        size_t bytes_read = recv(headfd, buffer, sizeof(buffer)-1, 0); 
         if (bytes_read < 0) {
             printf("Error reading the clientfd\n"); 
             exit(-1);
@@ -107,12 +145,22 @@ void run_server(server * s){
 
         printf("\n\nSending Response (%d bytes):\n%s", response_size, response);
 
-        // send the response to the client 
-        send(clientfd, response, response_size, 0); 
+        // send the response to the Load Balancer 
+        send(headfd, response, response_size, 0); 
 
         // cleanup 
-        free(response); 
-        close(clientfd); 
+        free((void*)response); 
+        close(headfd); 
         exit(-1);
     }
+}
+
+int main(){
+
+    server Server; 
+
+    create_server(&Server);
+    run_server(&Server);
+    
+    return 0; 
 }

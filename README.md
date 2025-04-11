@@ -19,7 +19,8 @@ To remove tests:
 * Add support for other HTTP Request Methods other than GET 
 
 ## TODO:
-* Smooth Weighted round robin load balancing
-* Create servers, connect them to a network (using connect()), create bash scripts for them to run ./server on startup 
-* Change the make file to have a maker server and make head rules 
-    * Here, head will be the server distributing
+* Create servers that will accept connections to the HEAD and then parse the message, returning a response 
+
+, connect them to a network (using connect()), create bash scripts for them to run ./server on startup 
+
+
