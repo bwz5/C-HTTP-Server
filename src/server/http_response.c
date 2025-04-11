@@ -8,7 +8,7 @@ int flatten_response_object(const char ** response, HTTP_RESPONSE * http_respons
                      strlen(http_response->status_code) + 1 + 
                      strlen(http_response->headers) + 4 + // TODO: CRLF only accounts for ONE HEADER PLUS the blank line after
                      strlen(http_response->reason_phrase) + 2 + // CRLF after status line
-                     strlen(http_response->body);
+                     strlen(http_response->body_buffer);
     
     // Allocate memory for the complete response
     *response = (char *)malloc(buffer_len + 1);  // +1 for null terminator
@@ -23,7 +23,7 @@ int flatten_response_object(const char ** response, HTTP_RESPONSE * http_respons
         http_response->status_code, 
         http_response->reason_phrase, 
         http_response->headers, 
-        http_response->body);
+        http_response->body_buffer);
 
     return written;
 }
@@ -35,17 +35,25 @@ void generate_404(HTTP_RESPONSE * hr){
 
     hr->headers="Content-Type: text/html; charset=UTF-8";
 
-    hr->body = 
-        "<!DOCTYPE HTML PUBLIC >\r\n"
-        "<html>\r\n"
-        "<head>\r\n"
-        "   <title>404 Not Found</title>\r\n"
-        "</head>\r\n"
-        "<body>\r\n"
-        "<h1>Not Found</h1>\r\n"
-        "<p>The requested URL was not found on this server.</p>\r\n"
-        "</body>\r\n"
-        "</html>\r\n";
+    // begin the HTML Body 
+    DOCTYPE;
+    HTML("en") {
+        HEAD() {
+        META("charset='utf-8'");
+        META("name='viewport' "
+                "content='width=device-width, initial-scale=1'");
+        TITLE("Index page");
+        META("name='description' content='Description'");
+        META("name='author' content='Author'");
+        META("property='og:title' content='Title'");
+        }
+        BODY("") {
+            H1("") {
+                _("404: Page not found");
+            }
+            P("Please ensure the url you entered was correct.");
+        }
+    }
 }
 
 void generate_home(HTTP_RESPONSE * hr){
@@ -55,17 +63,25 @@ void generate_home(HTTP_RESPONSE * hr){
 
     hr->headers="Content-Type: text/html; charset=UTF-8";
 
-    hr->body = 
-        "<!DOCTYPE HTML PUBLIC >\r\n"
-        "<html>\r\n"
-        "<head>\r\n"
-        "   <title>Home Page</title>\r\n"
-        "</head>\r\n"
-        "<body>\r\n"
-        "<h1>Home Page!</h1>\r\n"
-        "<p>Welcome to the home page of the HTTP Server in C Project.</p>\r\n"
-        "</body>\r\n"
-        "</html>\r\n";
+    // begin the HTML Body 
+    DOCTYPE;
+    HTML("en") {
+        HEAD() {
+        META("charset='utf-8'");
+        META("name='viewport' "
+                "content='width=device-width, initial-scale=1'");
+        TITLE("Index page");
+        META("name='description' content='Description'");
+        META("name='author' content='Author'");
+        META("property='og:title' content='Title'");
+        }
+        BODY("") {
+            H1("") {
+                _("Welcome to the Home Page!");
+            }
+            P("This site was created by Benjamin Zou.");
+        }
+    }
 }
 
 void generate_response(HTTP_RESPONSE * hr, const char * method_name, const char * relative_path){

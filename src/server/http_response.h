@@ -4,6 +4,8 @@
 #include <stdio.h> 
 #include "html_tags.h"
 
+#define HTML_RESPONSE_SIZE 4096 
+
 typedef struct {
     // Message Status-Line
     const char * version; 
@@ -13,7 +15,7 @@ typedef struct {
     const char * headers; 
 
     // Body 
-    const char * body; 
+    char body_buffer[HTML_RESPONSE_SIZE];
 } HTTP_RESPONSE; 
 
 /* 
