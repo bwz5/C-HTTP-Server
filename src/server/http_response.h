@@ -2,6 +2,7 @@
 #define HTTP_RESPONSE_H
 
 #include <stdio.h> 
+#include "html_tags.h"
 
 typedef struct {
     // Message Status-Line

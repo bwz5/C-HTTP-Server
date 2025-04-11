@@ -19,4 +19,4 @@ To remove tests:
 `make clean_test` 
 
 ## Further work: 
-* Add support for other HTTP Request Methods other than GET 
+* Create a HTTP Response file, and then use html_tags.h to generate real responses by writing to that file, then send the entire file as the response 

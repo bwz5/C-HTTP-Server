@@ -27,7 +27,7 @@ src/lib/picohttpparser/http_parser.o: src/lib/picohttpparser/picohttpparser.c sr
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile http_response.c -> http_response.o
-src/server/http_response.o: src/server/http_response.c src/server/http_response.h
+src/server/http_response.o: src/server/http_response.c src/server/http_response.h src/server/html_tags.h
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Compile server.c -> server.o
