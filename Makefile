@@ -2,10 +2,13 @@
 CC     = gcc
 CFLAGS = -Wall -Wextra -std=c11
 
-# SERVER_TARGET executable name
-SERVER_TARGET = server
+ifdef SECURE 
+	CFLAGS += -DHTTPS_SUPPORT -I/opt/homebrew/opt/openssl@3/include -L/opt/homebrew/opt/openssl@3/lib -lssl -lcrypto
+endif 
 
-#HEAD_TARGET exectuable name
+
+# Target names 
+SERVER_TARGET = server
 HEAD_TARGET = head 
 
 # Object files
@@ -34,7 +37,7 @@ src/server/http_response.o: src/server/http_response.c src/server/http_response.
 src/server/server.o: src/server/server.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
-##### HEAD (LOAD BALANCER) #####
+##### HEAD (LOAD BALANCER). Uses standard HTTP #####
 # Compile head into an executable 
 $(HEAD_TARGET): $(HEAD_OBJS)
 	$(CC) $(CFLAGS) -o $@ $(HEAD_OBJS)
@@ -57,5 +60,8 @@ client_test:
 clean_test:
 	rm -f test_client
 
+all: 
+	@echo $(CFLAGS)
+
 # Explicitly define phony targets (not associated with files)
-.PHONY: all clean
+.PHONY: clean

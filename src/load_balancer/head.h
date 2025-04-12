@@ -9,6 +9,8 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <arpa/inet.h>
+#include <openssl/ssl.h>
+#include <openssl/err.h>
 
 #define SERVER_PORT_NUMBER 8080
 #define SERVER_IP "127.0.0.1"
@@ -58,6 +60,13 @@ typedef struct {
     unsigned int num_connections; 
 
     int static_weight_sum;
+
+    #ifdef HTTPS_SUPPORT
+        // OpenSSL 
+        SSL_CTX *ctx; 
+        SSL * ssl; 
+    #endif 
+
 } HEAD; 
 
 /* 
