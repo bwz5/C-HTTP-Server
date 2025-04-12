@@ -1,4 +1,4 @@
-# HTTP Server written only in C 
+# HTTP(S) Server written only in C 
 
 ## Build instructions for the Load Balancer (Normal HTTP): 
 `make head`   

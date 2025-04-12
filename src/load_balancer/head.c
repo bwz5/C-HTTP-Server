@@ -30,10 +30,29 @@ int create_server(SERVER_CONNECTION * sc, const char * ip, int port){
     }
 
     sc->weight = MEDIUM_WEIGHT; // TODO: Change weight later based on real info (CPU probably best)
+
     return 0;
 }
 
 void create_head(HEAD * s){
+    #ifdef HTTPS_SUPPORT
+        SSL_library_init();
+        OpenSSL_add_all_algorithms();
+        SSL_load_error_strings();
+
+        s->ctx =  SSL_CTX_new(TLS_server_method());
+        if (s->ctx == NULL) {
+            ERR_print_errors_fp(stderr);
+            exit(EXIT_FAILURE);
+        }
+
+        if (SSL_CTX_use_certificate_file(s->ctx, "./security/server.crt", SSL_FILETYPE_PEM) <= 0 ||
+            SSL_CTX_use_PrivateKey_file(s->ctx, "./security/server.key", SSL_FILETYPE_PEM) <= 0) {
+            ERR_print_errors_fp(stderr);
+            SSL_CTX_free(s->ctx);
+            exit(EXIT_FAILURE);
+        }
+    #endif 
     s->socketfd = socket(AF_INET, SOCK_STREAM, 0); 
 
     inet_aton(SERVER_IP,(struct in_addr*)&s->server_address.sin_addr); 
@@ -49,6 +68,9 @@ void create_head(HEAD * s){
 
     if (bind(s->socketfd, (struct sockaddr *)&s->server_address, sizeof(s->server_address)) < 0){
         printf("Failure to bind the socketfd with the sockaddr_in struct\n"); 
+        #ifdef HTTPS_SUPPORT
+            SSL_CTX_free(s->ctx);
+        #endif 
         exit(-1); 
     }
 
@@ -61,6 +83,9 @@ void create_head(HEAD * s){
 
     if (s->server_connections == NULL || s->current_weights == NULL){
         printf("Error using malloc, could not create load balancer.\n");
+        #ifdef HTTPS_SUPPORT
+            SSL_CTX_free(s->ctx);
+        #endif 
         exit(-1); 
     }
     //memset here to initialize an all zero array, as we assume in the round robin calculation initial values of zero
@@ -135,9 +160,28 @@ void * run_head(void * arg){
             continue; 
         }
 
+        #ifdef HTTPS_SUPPORT
+            s->ssl = SSL_new(s->ctx);
+            SSL_set_fd(s->ssl, clientfd);
+
+            // Perform the TLS handshake
+            if (SSL_accept(s->ssl) <= 0) {
+                ERR_print_errors_fp(stderr);
+                SSL_free(s->ssl);
+                close(clientfd);
+                continue;
+            }
+        #endif 
+
         // handle the incoming request 
-        char buffer[1024] = {0}; 
-        size_t bytes_read = recv(clientfd, buffer, sizeof(buffer), 0); 
+        char buffer[4096] = {0}; 
+        size_t bytes_read; 
+
+        #ifdef HTTPS_SUPPORT
+            bytes_read = SSL_read(s->ssl, buffer, sizeof(buffer));       
+        #else 
+            bytes_read = recv(clientfd, buffer, sizeof(buffer), 0);
+        #endif 
         if (bytes_read < 0) {
             printf("Error reading the clientfd\n"); 
             close(clientfd); // error on clientside or recv
@@ -174,7 +218,11 @@ void * run_head(void * arg){
         bytes_read = recv(s->server_connections[chosen_idx].serverfd, buffer, sizeof(buffer), 0);
 
         // send the response to the client 
-        bytes_sent = send(clientfd, buffer, bytes_read, 0); 
+        #ifdef HTTPS_SUPPORT
+            bytes_sent = SSL_write(s->ssl, buffer, bytes_read);
+        #else 
+            bytes_sent = send(clientfd, buffer, bytes_read, 0);
+        #endif 
 
         if (bytes_sent != bytes_read){
             printf("Error sending full message to the client.\n");
@@ -183,6 +231,10 @@ void * run_head(void * arg){
 
         // cleanup 
         close(clientfd); 
+        #ifdef HTTPS_SUPPORT
+            SSL_shutdown(s->ssl);
+            SSL_free(s->ssl);
+        #endif 
         exit(0);
     }
 }
